@@ -2,6 +2,11 @@
 
 Este documento sirve como informe final para el proyecto Melodía, una plataforma de streaming de música desarrollada con una arquitectura de microservicios moderna.
 
+## Arquitectura Propuesta
+
+Se propuso una arquitectura de microservicios, con un API Gateway que se encarga de la autenticación y enrutamiento a los servicios correspondientes, y los servicios se encargan de la lógica y persistencia de datos.
+Se tiene tambien un dashboard escrito en Next.js que se encarga de la administración de la plataforma. Todos los servicios se comunican entre si mediante la red interna de Railway, por lo que solo el gateway esta expuesto a internet, que nos permitió tener el auth centralizado en el gateway y el backend del dashboard.
+
 ## Diagramas de Arquitectura
 
 ### Vista Conceptual (Diagrama de Arquitectura)
@@ -12,7 +17,7 @@ Este documento sirve como informe final para el proyecto Melodía, una plataform
 
 ![Vista Física (Diagrama de Railway)](./images/railway.png)
 
-## Decisiones de Arquitectura
+## Decisiones de Implementación
 
 #### 1. Arquitectura de Microservicios
 
@@ -24,18 +29,25 @@ Optamos por separar la lógica en servicios independientes (`content-service`, `
 #### 2. Selección del Stack Tecnológico
 
 - **Hono:** Para los servicios backend, utilizamos Hono. Es un framework extremadamente ligero y rápido que soporta los estándares Web API. Su integración con TypeScript, Zod y OpenAPI para la validación de esquemas nos permitió definir contratos de API claros y seguros.
-- **OpenAPI Fetch** Para la comunicacion entre servicios (tanto interna entre servicios como app <-> gateway) utilizamos OpenAPI Fetch, una libreria que permite hacer requests HTTP tipadas a partir de esquemas OpenAPI.
+- **OpenAPI Fetch** Para la comunicacion entre servicios (tanto interna entre servicios como la app con el gateway) utilizamos OpenAPI Fetch, una libreria que permite hacer requests HTTP tipadas a partir de esquemas OpenAPI, facilitando la comunicacion entre servicios a la hora de definir los endpoints y poder recibir en cada request el tipo de respuesta esperado.
 - **PostgreSQL & Prisma:** Para la persistencia de datos estructurados (usuarios, metadatos de canciones, playlists), confiamos en la robustez de PostgreSQL junto con Prisma como ORM. Prisma nos facilitó mantener un esquema de datos coherente y tipado end-to-end en conjunto con las definiciones de OpenAPI.
 - **MongoDB (Notification Service):** Para las notificaciones, optamos por MongoDB debido a la naturaleza no estructurada.
+- **Cloudflare R2:** Para el almacenamiento de archivos estaticos (como las imagenes de los usuarios y las canciones), utilizamos Cloudflare R2, un almacenamiento de objetos similar a S3 pero mas economico y con un mejor rendimiento.
 - **Expo & React Native:** Para la aplicación móvil, Expo fue la elección natural para iterar rápido en Android debido a la previa experiencia del equipo en React.
 - **Next.js (Dashboard):** Para el panel de administración, aprovechamos mantenernos en React al igual que la App, utilizando Next.js como framework fullstack, lo que nos permitió configurar un RPC (librería oRPC) para poder tener un ciclo completo desde los servicios, al backend del frontend, al frontend completamente typesafe con inferencia de los tipos desde el OpenAPI y Prisma.
 - **Better Auth:** Utilizamos Better Auth para la autenticación y gestión de usuarios, tanto para la App frontend como para el Dashboard.
+
+#### 3. Detalles de Implementación
+
+- **Conexion con R2:** Para subir archivos a R2, se utilizaron pre-signed urls, que son urls que se generan en el backend y que son validas para un tiempo determinado, para luego ser utilizadas por el frontend para subir el archivo a R2, ahorrandonos la necesidad de tener un servidor intermedio para subir los archivos, reduciendo tanto la complejidad de pasar archivos grandes a traves del backend como el costo del bandwidth en la plataforma cloud.
+- **Dashboard:** El dashboard fue implementado como un microservicio separado, con su propio backend, su propio auth y propio entrypoint al sistema. Esta desicion se baso en la necesidad de tener un sistema de administración de la plataforma, que no sea parte de la app frontend, y que tenga su propio auth, separado del de usuarios de la app para ademas poder monitorear el estado de los servicios y la plataforma en general.
+- **Testing:** Se implementaron tests para cada servicio, y para cada uno de estos se puso en produccion una imagen de docker que se encarga de ejecutar los tests y generar el coverage, publicandolos en una pagina web para que se pueda ver el coverage de cada servicio.
 
 ## Funcionalidades Incompletas y Errores Conocidos
 
 A pesar de nuestros esfuerzos, existen áreas que quedaron pendientes o que podrían mejorarse en futuras iteraciones:
 
-- **Sincronización Offline en Móvil:** La aplicación móvil reproduce música en streaming, pero la funcionalidad de descargar canciones para escucha offline ("Modo Avión") quedó marcada como una mejora futura, dado que fue elegido priorizar la funcionalidad de la app y recomendaciones sobre la sincronización offline.
+- **Sincronización Offline en Mobile:** La aplicación reproduce música en streaming, pero la funcionalidad de descargar canciones para escucha offline ("Modo Avión") quedó marcada como una mejora futura, dado que fue elegido priorizar la funcionalidad de la app y recomendaciones sobre la sincronización offline.
 - **Búsqueda Avanzada:** Actualmente, la búsqueda se realiza directamente sobre la base de datos. Para un catálogo masivo, sería ideal integrar un motor de búsqueda dedicado como Elasticsearch para manejar typos y relevancia de mejor manera.
 
 ## Problemas Encontrados y Lecciones Aprendidas
