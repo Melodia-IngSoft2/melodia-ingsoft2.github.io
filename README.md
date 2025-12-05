@@ -55,6 +55,7 @@ Se tiene tambien un dashboard escrito en Next.js que se encarga de la administra
 ### Vista Física (Diagrama de Railway)
 
 ![Vista Física (Diagrama de Railway)](./images/railway.png)
+![Vista Física (Diagrama de Railway - Servicios de testing)](./images/railway-test.png)
 
 ### Evolución de la Arquitectura
 
