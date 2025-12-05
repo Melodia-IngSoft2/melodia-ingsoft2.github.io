@@ -6,13 +6,13 @@ Este documento sirve como informe final a modo de bitácora para el proyecto Mel
 
 **Materia:** Ingeniería de Software 2 - Cátedra Rojas
 
-| Nombre y Apellido | Padrón | Mail |
-| --- | --- | --- |
-| Siro Fatala | 109669 | <sfatala@fi.uba.ar> |
-| Mateo Daniel Vroonland | 109635 | <mvroonland@fi.uba.ar> |
-| Gian Luca Spagnolo | 108072 | <gspagnolo@fi.uba.ar> |
-| Melina Belén Jáuregui | 109524 | <mjauregui@fi.uba.ar> |
-| Juan Pablo Carosi Warburg | 109386 | <jcarosi@fi.uba.ar> |
+| Nombre y Apellido         | Padrón | Mail                   |
+| ------------------------- | ------ | ---------------------- |
+| Siro Fatala               | 109669 | <sfatala@fi.uba.ar>    |
+| Mateo Daniel Vroonland    | 109635 | <mvroonland@fi.uba.ar> |
+| Gian Luca Spagnolo        | 108072 | <gspagnolo@fi.uba.ar>  |
+| Melina Belén Jáuregui     | 109524 | <mjauregui@fi.uba.ar>  |
+| Juan Pablo Carosi Warburg | 109386 | <jcarosi@fi.uba.ar>    |
 
 Nuestro tutor para este proyecto fue: Gastón Mariano Frenkel - <gfrenkel@fi.uba.ar>
 
@@ -115,7 +115,7 @@ Implementamos un API Gateway que actúa como único punto de entrada para los cl
 - **Conexion con R2:** Para subir archivos a R2, se utilizaron pre-signed urls, que son urls que se generan en el backend y que son validas para un tiempo determinado, para luego ser utilizadas por el frontend para subir el archivo a R2, ahorrandonos la necesidad de tener un servidor intermedio para subir los archivos, reduciendo tanto la complejidad de pasar archivos grandes a traves del backend como el costo del bandwidth en la plataforma cloud.
 - **Dashboard:** El dashboard fue implementado como un microservicio separado, con su propio backend, su propio auth y propio entrypoint al sistema. Esta desicion se baso en la necesidad de tener un sistema de administración de la plataforma, que no sea parte de la app frontend, y que tenga su propio auth, separado del de usuarios de la app para ademas poder monitorear el estado de los servicios y la plataforma en general.
 - **Testing:** Se implementaron tests para cada servicio, y para cada uno de estos se puso en produccion una imagen de docker que se encarga de ejecutar los tests y generar el coverage, publicandolos en una pagina web para que se pueda ver el coverage de cada servicio.
-- **Sistema de Queues con RabbitMQ:** Para el envío de push notifications implementamos un sistema de colas utilizando RabbitMQ como message broker. Cuando el cron job detecta notificaciones pendientes cuya fecha de envío ya ha pasado, encola un mensaje por cada seguidor del artista en una cola durable. Un worker consume estos mensajes de forma asíncrona y envía las notificaciones push a través de la API de Expo. Este patrón productor-consumidor nos permite desacoplar el procesamiento de notificaciones del flujo principal, garantizar la entrega de mensajes mediante acknowledgements manuales (ack/nack), y controlar la concurrencia con prefetch para no saturar la API de Expo. Tambien se garantiza una persistencia de los mensajes, que asegura que no se pierdan notificaciones ante reinicios del servicio.
+- **Sistema de Queues con RabbitMQ:** Para el envío de push notifications implementamos un sistema de colas utilizando RabbitMQ como message broker. Esto fue necesario ya que firebase no permite programar notificaciones para el futuro, un feature requerido para lanzar notificaciones al publicar una cancion. Para llevar esto a cabo implementamos un cronjob que revisa cada un minuto notificaciones pendientes a enviar en ese minuto, y cuando detecta notificaciones pendientes, encola un mensaje por cada seguidor del artista en una cola durable. Un worker consume estos mensajes de forma asíncrona y envía las notificaciones push a través de la API de Expo (wrapper que multiplexa las conexiones a Firebase o a Apple Push Notification Service). Este patrón productor-consumidor nos permite desacoplar el procesamiento de notificaciones del flujo principal, garantizar la entrega de mensajes mediante acknowledgements manuales (ack/nack), y controlar la concurrencia con prefetch para evitar tener rate limitings en la API de Expo y asegurarnos de que no se pierdan notificaciones ante reinicios del servicio. Tambien se garantiza una persistencia de los mensajes, que asegura que no se pierdan notificaciones ante reinicios del servicio.
 
 ## Herramientas de Gestión Utilizadas
 
